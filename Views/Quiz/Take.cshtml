@@ -1,0 +1,62 @@
+﻿@model StudentAttempt
+@{
+    var quiz = Model.Quiz;
+    var attemptId = Model.Id;
+    var timeMinutes = quiz.TimeLimitMinutes;
+}
+@{
+    Layout = "_Layout";
+}
+
+<div class="container mt-4">
+    <div class="card p-3 shadow-sm">
+        <h3>@quiz.Title</h3>
+        <p>Student: @Model.Student.Name (@Model.Student.StudentNumber)</p>
+        <div id="timer" class="h4 text-danger">Time Left: <span id="timeText"></span></div>
+
+        <form id="quizForm" asp-action="Submit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="attemptId" value="@attemptId" />
+            @foreach (var q in quiz.Questions)
+            {
+                <div class="mb-3 card p-3">
+                    <p><strong>@q.Text</strong></p>
+                    @foreach (var c in q.Choices)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="answers[@q.Id]" value="@c.Id" id="q@q.Id-c@c.Id" />
+                            <label class="form-check-label" for="q@q.Id-c@c.Id">@c.Text</label>
+                        </div>
+                    }
+                </div>
+            }
+            <button id="submitBtn" type="submit" class="btn btn-primary">Submit Quiz</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var timeLeftSeconds = @timeMinutes * 60;
+
+        function format(t) {
+            var m = Math.floor(t/60);
+            var s = t % 60;
+            return (m < 10 ? '0'+m : m) + ':' + (s < 10 ? '0'+s : s);
+        }
+
+        var timerElem = document.getElementById('timeText');
+        timerElem.innerText = format(timeLeftSeconds);
+
+        var interval = setInterval(function(){
+            timeLeftSeconds--;
+            timerElem.innerText = format(timeLeftSeconds);
+            if (timeLeftSeconds <= 0) {
+                clearInterval(interval);
+                document.getElementById('submitBtn').disabled = true;
+                alert('Time is up! Auto-submitting your answers.');
+                document.getElementById('quizForm').submit();
+            }
+        }, 1000);
+    </script>
+}

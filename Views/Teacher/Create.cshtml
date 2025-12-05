@@ -1,0 +1,88 @@
+﻿@{
+    ViewData["Title"] = "Create Quiz";
+}
+<div class="container mt-4">
+    <h2>Create Quiz</h2>
+    <div class="card p-3">
+        <div class="mb-3">
+            <label>Title</label>
+            <input id="title" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Time Limit (minutes)</label>
+            <input id="timeLimit" type="number" class="form-control" value="10" />
+        </div>
+
+        <div id="questions"></div>
+
+        <button id="addQ" class="btn btn-outline-primary">Add Question</button>
+        <button id="saveBtn" class="btn btn-success">Save Quiz</button>
+
+        @Html.AntiForgeryToken()
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let qIndex = 0;
+        function newQuestion() {
+          const idx = qIndex++;
+          const div = document.createElement('div');
+          div.className = 'mb-3 card p-3';
+          div.innerHTML = `
+            <label>Question text</label>
+            <input data-q="${idx}" class="form-control qtext" />
+            <div class="mt-2 choices">
+              ${[0,1,2,3].map(i => `
+                <div class="form-check">
+                  <input type="text" class="form-control d-inline-block choice-text" data-q="${idx}" data-c="${i}" style="width:85%;display:inline-block" placeholder="Choice ${i+1}" />
+                  <input type="checkbox" class="form-check-input d-inline-block isCorrect" data-q="${idx}" data-c="${i}" />
+                  <label class="form-check-label">Correct</label>
+                </div>`).join('')}
+            </div>`;
+          document.getElementById('questions').appendChild(div);
+        }
+
+        document.getElementById('addQ').addEventListener('click', e => { e.preventDefault(); newQuestion(); });
+        newQuestion(); // start with one
+
+        document.getElementById('saveBtn').addEventListener('click', async (e) => {
+          e.preventDefault();
+          const title = document.getElementById('title').value.trim();
+          const timeLimit = parseInt(document.getElementById('timeLimit').value, 10);
+
+          const questions = Array.from(document.querySelectorAll('.qtext')).map(qEl => {
+            const qid = qEl.getAttribute('data-q');
+            const text = qEl.value;
+            const choicesEls = Array.from(document.querySelectorAll(`.choice-text[data-q="${qid}"]`));
+            const choiceObjs = choicesEls.map((cEl, i) => {
+              const isCorrect = document.querySelector(`.isCorrect[data-q="${qid}"][data-c="${i}"]`).checked;
+              return { text: cEl.value, isCorrect };
+            });
+            return { text, choices: choiceObjs };
+          });
+
+          const dto = { title, timeLimitMinutes: timeLimit, questions };
+
+          // anti-forgery token
+          const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+          const res = await fetch('/Teacher/Create', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'RequestVerificationToken': token
+            },
+            body: JSON.stringify(dto)
+          });
+
+          if (res.ok) {
+            alert('Quiz saved');
+            window.location = '/';
+          } else {
+            const t = await res.text();
+            alert('Error: ' + t);
+          }
+        });
+    </script>
+}

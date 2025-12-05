@@ -1,0 +1,24 @@
+﻿@model IEnumerable<StudentAttempt>
+@{
+    ViewData["Title"] = "Report";
+}
+<div class="container mt-4">
+    <h2>Report</h2>
+    <table class="table">
+        <thead>
+            <tr><th>Student Number</th><th>Name</th><th>Score</th><th>Start</th><th>End</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.Student.StudentNumber</td>
+                    <td>@a.Student.Name</td>
+                    <td>@a.Score</td>
+                    <td>@a.StartTime</td>
+                    <td>@a.EndTime</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
